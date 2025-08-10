@@ -1,0 +1,35 @@
+
+name: Build and Test Generated App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build Docker image
+      run: docker build -t generated-app .
+
+    - name: Run Docker container
+      run: docker run -d --name generated-app-instance -p 8000:8000 generated-app
+
+    - name: Wait for app to start
+      run: sleep 5 # Give the app some time to start
+
+    - name: Test API endpoint
+      run: |
+        curl -f http://localhost:8000/ || exit 1
+        curl -f http://localhost:8000/ping || exit 1
+
+    - name: Stop and remove container
+      if: always()
+      run: |
+        docker stop generated-app-instance
+        docker rm generated-app-instance
